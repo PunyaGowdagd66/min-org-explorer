@@ -26,7 +26,8 @@ async function fetchOrg() {
         }
 
         const orgData = await orgResponse.json();
-
+        
+      
         // Fetch repos
         const repoResponse = await fetch(`https://api.github.com/orgs/${orgName}/repos?per_page=100`);
         const repoData = await repoResponse.json();
@@ -85,23 +86,28 @@ async function fetchOrg() {
             <h3>${totalStars}</h3>
             <p>Total Stars</p>
         </div>
-    </div>
-    ///
+        </div>
             <p>Public Repos: ${orgData.public_repos}</p>
             <p>Total Stars: ${totalStars}</p>
              <h3>Language Distribution</h3>
             <canvas id="languageChart"></canvas>
             <h3>Top 5 Repositories by Stars</h3>
-             <canvas id="topReposChart"></canvas>
-               <div style="margin-top:20px;">
+            <canvas id="topReposChart"></canvas>
+
+        <div style="margin-top:20px;">
         <button onclick="prevPage()">⬅ Previous</button>
         <span> Page ${currentPage} </span>
         <button onclick="nextPage()">Next ➡</button>
-    </div>
+        </div>
+
+        <h3>Top Contributors</h3>
+        <div id="contributorsList"></div>
 
     <h3>Repository List</h3>
     <div id="repoList"></div>
         `;
+
+        fetchTopContributors(orgName);
 
 
         // THEN create chart
@@ -253,4 +259,44 @@ function toggleRepoDetails(repoItem, repo) {
     setTimeout(() => {
         detailsDiv.classList.add("active");
     }, 10);
+}
+async function fetchTopContributors(orgName) {
+
+    const contributorsDiv = document.getElementById("contributorsList");
+
+    try {
+
+        const response = await fetch(
+            `https://api.github.com/orgs/${orgName}/repos?per_page=5`
+        );
+
+        const repos = await response.json();
+
+        contributorsDiv.innerHTML = "";
+
+        for (const repo of repos) {
+
+            const contributorRes = await fetch(repo.contributors_url);
+            const contributors = await contributorRes.json();
+
+            contributors.slice(0,2).forEach(user => {
+
+                const userItem = document.createElement("p");
+
+                userItem.innerHTML = `
+                <img src="${user.avatar_url}" width="30" style="border-radius:50%; vertical-align:middle;">
+                ${user.login}
+                `;
+
+                contributorsDiv.appendChild(userItem);
+
+            });
+
+        }
+
+    } catch (error) {
+
+        contributorsDiv.innerHTML = "Could not load contributors";
+
+    }
 }
